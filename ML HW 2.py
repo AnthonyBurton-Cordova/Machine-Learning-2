@@ -47,7 +47,7 @@ paramDic = {"RandomForestClassifier":{"n_estimators": [100, 200, 500],
             "GradientBoostingClassifier": {"learning_rate": [.1, .01, .5],
                                            "n_estimators": [100, 200, 500]},
             "LogisticRegression":{"fit_intercept": [True, False],
-                                  "positive": [True, False]}}
+                                  "penalty": ["l1", "l2", "elasticnet", None]}}
 
 for model in clfs:
    model_name = str(model).rsplit('.',1)[1][:-2]
