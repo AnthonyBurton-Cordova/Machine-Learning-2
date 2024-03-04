@@ -58,6 +58,19 @@ for model in clfs:
     print(arg_dic)
 
 
+def train_classifiers(clf, data);
+  results = {}
+  for clf_name, hyperparams in paramDic.items():
+    #paramDicK = paramDic.keys()
+    #hyperparamsV = paramDic.values()
+    for clf_name, hyperparams in hpnames.
+
+
+hyperparamsV = paramDic.values()
+hyperparamsV
+
+
+
 def run(a_clf, data, clf_hyper, M, L, n_folds):
   kf = KFold(n_splits=n_folds) # Establish the cross validation
   ret = {} # classic explicaiton of results
@@ -70,6 +83,8 @@ def run(a_clf, data, clf_hyper, M, L, n_folds):
                'test_index': test_index,
                'accuracy': accuracy_score(L[test_index], pred)}
   return ret
+
+
 
 results = run(RandomForestClassifier, data, clf_hyper={})
 

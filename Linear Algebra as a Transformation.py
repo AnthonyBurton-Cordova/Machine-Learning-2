@@ -26,3 +26,14 @@ plt.show()
 plt.plot(*np.dot(v, multiplication_matrix))
 plt.show()
 
+# Using matrix addtion or vector addition
+V_2 = np.array([[0,2],
+                [0,1]])
+
+V_3 = (v+V_2)
+plt.plot(*V_3)
+plt.show()
+
+# instead of explicily creating V_3, you can do the following addition in plt.plot
+plt.plot(*(v+V_2))
+plt.show()
