@@ -149,8 +149,3 @@ def plot_all_metrics_separately(results):
     plt.show()
 
 plot_all_metrics_separately(results)
-
-
-results = run(RandomForestClassifier, data, clf_hyper={})
-
-print(results)
