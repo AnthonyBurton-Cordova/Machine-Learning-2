@@ -9,7 +9,6 @@
 # each with 3 different sets of hyper parrameters for each
 #
 
-
 # Part 2
 # 2. expand to include larger number of classifiers and hyperparmater settings
 # 3. find some simple data to work with
@@ -33,6 +32,8 @@ from sklearn.model_selection import KFold
 from itertools import product
 from sklearn import datasets
 import matplotlib.pyplot as plt
+from sklearn.model_selection import GridSearchCV, train_test_split
+
 
 
 #Iris data
@@ -149,3 +150,25 @@ def plot_all_metrics_separately(results):
     plt.show()
 
 plot_all_metrics_separately(results)
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(M, L, test_size=0.3, random_state=42)
+
+# Parameter grid specifically for RandomForestClassifier from your setup
+param_grid_rf = {
+    "n_estimators": [100, 200, 500],
+    "max_depth": [5, 8, 10, None]
+}
+
+# Initialize the RandomForestClassifier
+rf = RandomForestClassifier(random_state=42)
+
+# Setup GridSearchCV for RandomForestClassifier
+grid_search_rf = GridSearchCV(estimator=rf, param_grid=param_grid_rf, cv=5, n_jobs=-1, verbose=2)
+
+# Perform the grid search on the training data
+grid_search_rf.fit(X_train, y_train)
+
+# Output the best parameters and the corresponding score
+print("Best parameters found for RandomForestClassifier: ", grid_search_rf.best_params_)
+print("Best cross-validation score: {:.3f}".format(grid_search_rf.best_score_))
