@@ -23,7 +23,9 @@
 # Use Optuna to optimize a NN on a data set.
 
 import numpy as np
-from sklearn.metrics import accuracy_score # Please select some other metircs in addtion to this.
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import precision_score 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
@@ -40,6 +42,7 @@ n_folds = 5
 data = (M, L, n_folds)
 
 clfs = [RandomForestClassifier, GradientBoostingClassifier, LogisticRegression]
+
 paramDic = {"RandomForestClassifier":{"n_estimators": [100, 200, 500], 
                                       "max_depth": [5,8,10]}, 
             "GradientBoostingClassifier": {"learning_rate": [.1, .01, .5],
@@ -55,39 +58,32 @@ for model in clfs:
       arg_dic[k] = v
     print(arg_dic)
 
+def run(a_clf, data, clf_hyper, n_folds=5):
+    M, L = data  # Unpacking the data
+    kf = KFold(n_splits=n_folds)
+    results = []  # Storing results from each fold
+
+    for train_index, test_index in kf.split(M):
+        clf = a_clf(**clf_hyper)  # Creating the classifier with the given hyperparameters
+        clf.fit(M[train_index], L[train_index])
+        pred = clf.predict(M[test_index])
+        # Calculating metrics
+        acc = accuracy_score(L[test_index], pred)
+        f1 = f1_score(L[test_index], pred, average='weighted')  # Using weighted for multi-class classification
+        prec = precision_score(L[test_index], pred, average='weighted')  # Using weighted for multi-class classification
+        results.append({"accuracy": acc, "f1": f1, "precision": prec})
+    return np.mean([res["accuracy"] for res in results]), np.mean([res["f1"] for res in results]), np.mean([res["precision"] for res in results])
 
 def train_classifiers(clfs, paramDic, data, n_folds=5):
     results = {}
     for clf in clfs:
         clf_name = clf.__name__
-        hyperparams_list = list(product(*paramDic[clf_name].values()))
-        for hyperparams in hyperparams_list:
-            clf_hyper = dict(zip(paramDic[clf_name].keys(), hyperparams))
-            clf_results = run(clf, data, clf_hyper, n_folds)
-            results[(clf_name, tuple(clf_hyper.items()))] = clf_results
+        for arg_values in product(*paramDic[clf_name].values()):
+            arg_dic = dict(zip(paramDic[clf_name].keys(), arg_values))
+            avg_accuracy, avg_f1, avg_precision = run(clf, data, arg_dic, n_folds)
+            results[(clf_name, tuple(arg_dic.items()))] = {"avg_accuracy": avg_accuracy, "avg_f1": avg_f1, "avg_precision": avg_precision}
     return results
 
-            print(results)
-
-
-# Assuming 'data' is a tuple (M, L) where M is features and L is labels
-def run(a_clf, data, clf_hyper, n_folds=5):
-    M, L = data
-    kf = KFold(n_splits=n_folds)  # Establish the cross-validation
-    results = []  # Store results from each fold
-
-    for train_index, test_index in kf.split(M):
-        clf = a_clf(**clf_hyper)  # Unpack parameters into clf if they exist
-        clf.fit(M[train_index], L[train_index])
-        pred = clf.predict(M[test_index])
-        accuracy = accuracy_score(L[test_index], pred)
-        results.append(accuracy)
-
-    return sum(results) / len(results), results  # Return average accuracy and accuracy from each fold
-
-# Example usage
-# Assuming you have your data ready as M (features) and L (labels)
-# M, L = ...
 
 # Loop through each classifier and their hyperparameter combinations
 for clf in clfs:
@@ -97,9 +93,13 @@ for clf in clfs:
         
         # Example data placeholder, replace with your actual data
         data = (M, L)
-        avg_accuracy, accuracies = run(clf, data, arg_dic)
+        accuracies, f1, precision = run(clf, data, arg_dic)
         
-        print(f"Classifier: {clf_name}, Parameters: {arg_dic}, Avg Accuracy: {avg_accuracy}")
+        print(f"Classifier: {clf_name}, Parameters: {arg_dic}, Accuracy: {accuracies}, F1 Score: {f1}, Precision: {precision}")
+
+
+
+
 
 results = run(RandomForestClassifier, data, clf_hyper={})
 
