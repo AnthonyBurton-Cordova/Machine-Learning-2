@@ -32,6 +32,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
 from itertools import product
 from sklearn import datasets
+import matplotlib.pyplot as plt
 
 
 #Iris data
@@ -58,8 +59,9 @@ for model in clfs:
       arg_dic[k] = v
     print(arg_dic)
 
+# def run function
 def run(a_clf, data, clf_hyper, n_folds=5):
-    M, L = data  # Unpacking the data
+    M, L = data
     kf = KFold(n_splits=n_folds)
     results = []  # Storing results from each fold
 
@@ -74,6 +76,7 @@ def run(a_clf, data, clf_hyper, n_folds=5):
         results.append({"accuracy": acc, "f1": f1, "precision": prec})
     return np.mean([res["accuracy"] for res in results]), np.mean([res["f1"] for res in results]), np.mean([res["precision"] for res in results])
 
+# Train classifer function
 def train_classifiers(clfs, paramDic, data, n_folds=5):
     results = {}
     for clf in clfs:
@@ -97,8 +100,55 @@ for clf in clfs:
         
         print(f"Classifier: {clf_name}, Parameters: {arg_dic}, Accuracy: {accuracies}, F1 Score: {f1}, Precision: {precision}")
 
+# Plot the scores
+def plot_metric(results, metric_name):
+    labels = []
+    scores = []
+    
+    for (clf_name, params), metrics in results.items():
+        # Simplify parameter display for the plot, focusing on key parameters for brevity
+        param_summary = ', '.join([f"{k.split('_')[-1]}:{v}" for k, v in params])
+        labels.append(f"{clf_name}\n{param_summary}")
+        if metric_name == 'accuracy':
+            scores.append(metrics["avg_accuracy"])
+        elif metric_name == 'f1':
+            scores.append(metrics["avg_f1"])
+        elif metric_name == 'precision':
+            scores.append(metrics["avg_precision"])
+    
+    x = np.arange(len(labels))  # Label locations
+    fig, ax = plt.subplots(figsize=(12, 6))
+    rects = ax.bar(x, scores, label=metric_name.capitalize())
 
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel(f'{metric_name.capitalize()} Scores')
+    ax.set_title(f'{metric_name.capitalize()} by classifier and parameter combination')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+    ax.legend()
 
+    def autolabel(rects):
+        """Attach a text label above each bar in *rects*, displaying its height."""
+        for rect in rects:
+            height = rect.get_height()
+            ax.annotate(f'{height:.2f}',
+                        xy=(rect.get_x() + rect.get_width() / 2, height),
+                        xytext=(0, 3),  # 3 points vertical offset
+                        textcoords="offset points",
+                        ha='center', va='bottom')
+
+    autolabel(rects)
+    fig.tight_layout()
+
+def plot_all_metrics_separately(results):
+    plot_metric(results, 'accuracy')
+    plt.show()
+    plot_metric(results, 'f1')
+    plt.show()
+    plot_metric(results, 'precision')
+    plt.show()
+
+plot_all_metrics_separately(results)
 
 
 results = run(RandomForestClassifier, data, clf_hyper={})
