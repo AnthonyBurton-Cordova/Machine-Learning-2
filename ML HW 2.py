@@ -101,6 +101,8 @@ for clf in clfs:
         
         print(f"Classifier: {clf_name}, Parameters: {arg_dic}, Accuracy: {accuracies}, F1 Score: {f1}, Precision: {precision}")
 
+results = train_classifiers(clfs, paramDic, data, n_folds)
+
 # Plot the scores
 def plot_metric(results, metric_name):
     labels = []
@@ -140,6 +142,7 @@ def plot_metric(results, metric_name):
 
     autolabel(rects)
     fig.tight_layout()
+
 
 def plot_all_metrics_separately(results):
     plot_metric(results, 'accuracy')
