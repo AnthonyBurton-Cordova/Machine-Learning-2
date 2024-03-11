@@ -1,26 +1,17 @@
 # The goal of this homework is to create a grid search first using just SKLearn and then later use the Optuna framework.
-
-
 # Adapt this code below to run your analysis.
 # Each part should require a single week
 
-# Part 1
+
+#### Part 1 and 2
+
 # 1. Write a function to take a list or dictionary of clfs and hypers ie use logistic regression,
 # each with 3 different sets of hyper parrameters for each
-#
-
-# Part 2
 # 2. expand to include larger number of classifiers and hyperparmater settings
 # 3. find some simple data to work with
 # 4. generate matplotlib plots that will assist in identifying the optimal clf and parampters settings
 
-# Part 3
-# 5. Please set up your code to be run and save the results to the directory that its executed from
-# 6. Investigate grid search function in sklearn
-
-# Extra credit.
-# Use Optuna to optimize a NN on a data set.
-
+# Import libraries
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
@@ -36,15 +27,17 @@ from sklearn.model_selection import GridSearchCV, train_test_split
 
 
 
-#Iris data
+# Import the Iris dataset
 iris = datasets.load_iris()
 M = iris.data
 L = iris.target
 n_folds = 5
 data = (M, L, n_folds)
 
+# Define the Classifiers I'll be using
 clfs = [RandomForestClassifier, GradientBoostingClassifier, LogisticRegression]
 
+# Creating a dictionary to store the classifiers and their respective hyperparameters 
 paramDic = {"RandomForestClassifier":{"n_estimators": [100, 200, 500], 
                                       "max_depth": [5,8,10]}, 
             "GradientBoostingClassifier": {"learning_rate": [.1, .01, .5],
@@ -52,6 +45,7 @@ paramDic = {"RandomForestClassifier":{"n_estimators": [100, 200, 500],
             "LogisticRegression":{"fit_intercept": [True, False],
                                   "penalty": ["l2", None]}}
 
+# Creating a loop to store each classifier and use each hyperparameter 
 for model in clfs:
    model_name = str(model).rsplit('.',1)[1][:-2]
    for arg_values in product(*[x for x in paramDic[model_name].values()]):
@@ -64,20 +58,20 @@ for model in clfs:
 def run(a_clf, data, clf_hyper, n_folds=5):
     M, L = data
     kf = KFold(n_splits=n_folds)
-    results = []  # Storing results from each fold
-
+    results = []
     for train_index, test_index in kf.split(M):
-        clf = a_clf(**clf_hyper)  # Creating the classifier with the given hyperparameters
+        clf = a_clf(**clf_hyper)
         clf.fit(M[train_index], L[train_index])
         pred = clf.predict(M[test_index])
-        # Calculating metrics
+        
+        # I want to use accuracy, f1, and precision to score each classifier
         acc = accuracy_score(L[test_index], pred)
         f1 = f1_score(L[test_index], pred, average='weighted')  # Using weighted for multi-class classification
         prec = precision_score(L[test_index], pred, average='weighted')  # Using weighted for multi-class classification
         results.append({"accuracy": acc, "f1": f1, "precision": prec})
     return np.mean([res["accuracy"] for res in results]), np.mean([res["f1"] for res in results]), np.mean([res["precision"] for res in results])
 
-# Train classifer function
+# Now we need to train each classifier
 def train_classifiers(clfs, paramDic, data, n_folds=5):
     results = {}
     for clf in clfs:
@@ -94,22 +88,19 @@ for clf in clfs:
     clf_name = clf.__name__
     for arg_values in product(*paramDic[clf_name].values()):
         arg_dic = dict(zip(paramDic[clf_name].keys(), arg_values))
-        
-        # Example data placeholder, replace with your actual data
         data = (M, L)
         accuracies, f1, precision = run(clf, data, arg_dic)
         
         print(f"Classifier: {clf_name}, Parameters: {arg_dic}, Accuracy: {accuracies}, F1 Score: {f1}, Precision: {precision}")
 
+# Store the results from each classifier
 results = train_classifiers(clfs, paramDic, data, n_folds)
 
 # Plot the scores
 def plot_metric(results, metric_name):
     labels = []
     scores = []
-    
     for (clf_name, params), metrics in results.items():
-        # Simplify parameter display for the plot, focusing on key parameters for brevity
         param_summary = ', '.join([f"{k.split('_')[-1]}:{v}" for k, v in params])
         labels.append(f"{clf_name}\n{param_summary}")
         if metric_name == 'accuracy':
@@ -118,32 +109,29 @@ def plot_metric(results, metric_name):
             scores.append(metrics["avg_f1"])
         elif metric_name == 'precision':
             scores.append(metrics["avg_precision"])
-    
-    x = np.arange(len(labels))  # Label locations
+    x = np.arange(len(labels))
     fig, ax = plt.subplots(figsize=(12, 6))
     rects = ax.bar(x, scores, label=metric_name.capitalize())
 
-    # Add some text for labels, title and custom x-axis tick labels, etc.
+    # Making the charts readable by adding labels
     ax.set_ylabel(f'{metric_name.capitalize()} Scores')
     ax.set_title(f'{metric_name.capitalize()} by classifier and parameter combination')
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=45, ha='right')
     ax.legend()
-
     def autolabel(rects):
         """Attach a text label above each bar in *rects*, displaying its height."""
         for rect in rects:
             height = rect.get_height()
             ax.annotate(f'{height:.2f}',
                         xy=(rect.get_x() + rect.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
+                        xytext=(0, 3),
                         textcoords="offset points",
                         ha='center', va='bottom')
-
     autolabel(rects)
     fig.tight_layout()
 
-
+# Plot the scores from each classifier
 def plot_all_metrics_separately(results):
     plot_metric(results, 'accuracy')
     plt.show()
@@ -157,7 +145,12 @@ plot_all_metrics_separately(results)
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(M, L, test_size=0.3, random_state=42)
 
-# Parameter grid specifically for RandomForestClassifier from your setup
+#### Part 3
+
+# 5. Please set up your code to be run and save the results to the directory that its executed from
+# 6. Investigate grid search function in sklearn
+
+# Parameter grid specifically for RandomForestClassifier
 param_grid_rf = {
     "n_estimators": [100, 200, 500],
     "max_depth": [5, 8, 10, None]
