@@ -134,7 +134,191 @@ average_seven = np.mean(sevens, axis=0)
 average_eight = np.mean(eights, axis=0)
 average_nine = np.mean(nines, axis=0)
 
-
+#View MNIST numbers
+plt.imshow(sevens[121])
 plt.imshow(nines[10])
 
-### 
+# Generate a weak signal
+fs = 1000  # Sampling frequency
+t = np.arange(0, 1, 1/fs)  # Time vector
+frequency = 5  # Frequency of the sine wave
+weak_signal = 0.5 * np.sin(2 * np.pi * frequency * t)  # Weak sine wave signal
+
+# Add noise
+noise_level = 1.3  # Adjust this to see the effect of different noise levels
+noise = noise_level * np.random.randn(len(t))
+noisy_signal = weak_signal + noise
+
+# Filter the noisy signal to demonstrate stochastic resonance
+# This is a very simplistic way of filtering just for demonstration purposes
+filtered_signal = np.convolve(noisy_signal, np.ones((50,))/50, mode='same')
+
+# Plotting
+plt.figure(figsize=(15, 6))
+
+plt.subplot(3, 1, 1)
+plt.plot(t, weak_signal, label='Weak Signal')
+plt.title('Original Weak Signal')
+plt.legend()
+
+plt.subplot(3, 1, 2)
+plt.plot(t, noisy_signal, label='Noisy Signal')
+plt.title('Weak Signal with Noise')
+plt.legend()
+
+plt.subplot(3, 1, 3)
+plt.plot(t, filtered_signal, label='Filtered Signal')
+plt.title('Filtered Signal Demonstrating Stochastic Resonance')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+
+
+#### Question 2 - Transfer Learning on 5-9 using 1/10 of the data.
+
+# Define transformations for the dataset
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+])
+
+# Filter dataset to include only digits 5-9
+train_indices = train_dataset.targets >= 5
+test_indices = test_dataset.targets >= 5
+
+train_dataset.targets = train_dataset.targets[train_indices] - 5
+train_dataset.data = train_dataset.data[train_indices]
+test_dataset.targets = test_dataset.targets[test_indices] - 5
+test_dataset.data = test_dataset.data[test_indices]
+
+# Define the number of samples to use for testing (1/10 of the available data)
+num_test_samples = len(test_dataset) // 10
+
+# Create a random subset of the test dataset
+test_subset_indices = torch.randperm(len(test_dataset))[:num_test_samples]
+test_subset = Subset(test_dataset, test_subset_indices)
+
+# Ensure non-empty datasets
+if len(train_dataset) == 0 or len(test_subset) == 0:
+    raise ValueError("Empty dataset after filtering")
+
+# Define data loaders
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=False)
+
+# Define number of epochs
+epochs = 7
+
+# Define batch size
+batch_size = 32
+
+# Training the model
+for epoch in range(epochs):
+    model.train()  # Set model to training mode
+    running_loss = 0.0
+    for images, labels in train_loader:
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
+    print(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader)}")
+
+# Testing the model
+model.eval()  # Set model to evaluation mode
+correct = 0
+total = 0
+with torch.no_grad():
+    for images, labels in test_loader:
+        outputs = model(images)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+accuracy = 100 * correct / total
+print(f"Accuracy on test set (using 1/10 of the available data): {accuracy:.2f}%")
+
+
+
+
+#### Question 3 - Generate a data set of A - E and transfer the learning to predict those images
+from PIL import Image
+
+# Load an image
+A = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\A.jpeg')
+B = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\B.jpeg')
+C = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\C.jpeg')
+D = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\D.jpeg')
+E = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\E.jpeg')
+
+# Resize all the images
+resized_image = image.resize((500, 500))
+
+# Display the image
+resized_image.show()
+
+
+# Define your custom dataset class
+class CustomDataset(Dataset):
+    def __init__(self, root_dir, transform=None):
+        self.root_dir = root_dir
+        self.transform = transform
+        self.image_paths = [os.path.join(root_dir, file) for file in os.listdir(root_dir)]
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        image_path = self.image_paths[idx]
+        image = Image.open(image_path).convert("L")  # Convert to grayscale
+        if self.transform:
+            image = self.transform(image)
+        return image
+
+# Define transformations for the dataset
+transform = transforms.Compose([
+    transforms.Resize((28, 28)),  # Resize to 28x28
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+])
+
+# Path to your folder containing images of letters A through E
+root_dir = "/content/drive/My Drive/Letters"
+
+# Create an instance of your custom dataset
+custom_dataset = CustomDataset(root_dir, transform=transform)
+
+# Define a DataLoader for your custom dataset
+custom_loader = DataLoader(custom_dataset, batch_size=1, shuffle=False)
+
+# Load the pretrained model
+pretrained_model_path = "pretrained_model.pth"
+pretrained_model = CNN()
+pretrained_model.load_state_dict(torch.load(pretrained_model_path))
+
+# Define the criterion and optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(pretrained_model.parameters(), lr=0.01)
+
+# Define the true labels for the custom dataset
+true_labels = [0, 1, 2, 3, 4]  # Corresponding to letters A through E
+
+# Evaluate the model on your custom dataset
+correct = 0
+total = 0
+pretrained_model.eval()
+with torch.no_grad():
+    for images, labels in zip(custom_loader, true_labels):
+        outputs = pretrained_model(images)
+        _, predicted = torch.max(outputs.data, 1)
+        total += 1
+        correct += (predicted == labels).sum().item()
+
+# Calculate accuracy
+accuracy = (correct / total) * 100
+print(f"Accuracy on custom dataset: {accuracy:.2f}%")
+
+
