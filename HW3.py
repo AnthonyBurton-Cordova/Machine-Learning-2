@@ -105,7 +105,7 @@ with torch.no_grad():
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
 
-# Save the trained model for transfer learning
+#Save the Model for Transfer Learning
 torch.save(model.state_dict(), 'pretrained_model.pth')
 
 print(f"Accuracy on test set 0-4: {(100 * correct / total):.2f}%")
@@ -247,24 +247,14 @@ print(f"Accuracy on test set (using 1/10 of the available data) for 5-9: {accura
 #### Question 3 - Generate a data set of A - E and transfer the learning to predict those images
 from PIL import Image
 
-# Load an image.
-### Please dowload the images attached (A-E) to the submission and then copy and paste the local image here
-A = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\A.jpeg')
-B = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\B.jpeg')
-C = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\C.jpeg')
-D = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\D.jpeg')
-E = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\E.jpeg')
-
-# Resize all the images
-resized_image = A.resize((500, 500))
-
-# Display the image
-resized_image.show()
-
-# Define the new size
-new_size = (500, 500)
-
 # Paths to the images
+#### Please dowload the A - E images attached to the submission, save them locally, and then copy and paste the local path to the image here
+
+# Save the trained model for transfer learning
+pretrained_model_path = "pretrained_model.pth"
+pretrained_model = CNN()
+pretrained_model.load_state_dict(torch.load(pretrained_model_path))
+
 image_paths = [
     r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\A.jpeg',
     r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\B.jpeg',
@@ -272,74 +262,37 @@ image_paths = [
     r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\D.jpeg',
     r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\E.jpeg'
 ]
-    
-# Load each image, resize it, and display it
+
+# Define the new size and the rotation angle
+new_size = (500, 500)
+rotation_angle = -90
+
+# Process each image: load, resize, rotate, and display
 for path in image_paths:
+    # Load image
     img = Image.open(path)
+    # Resize image
     resized_img = img.resize(new_size)
-    
+    # Rotate image 90 degrees to the right
+    rotated_img = resized_img.rotate(rotation_angle)
     # Display the image
-    resized_img.show(title=os.path.basename(path))
-
-
-# Define your custom dataset class
-class CustomDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
-        self.root_dir = root_dir
-        self.transform = transform
-        self.image_paths = [os.path.join(root_dir, file) for file in os.listdir(root_dir)]
-
-    def __len__(self):
-        return len(self.image_paths)
-
-    def __getitem__(self, idx):
-        image_path = self.image_paths[idx]
-        image = Image.open(image_path).convert("L")  # Convert to grayscale
-        if self.transform:
-            image = self.transform(image)
-        return image
-
-# Define transformations for the dataset
+    rotated_img.show()
+    
+# Define transformation: resize, to tensor, normalization (adjust as needed)
 transform = transforms.Compose([
-    transforms.Resize((28, 28)),  # Resize to 28x28
+    transforms.Resize((28, 28)),  # Assuming the input size that your model expects
     transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))
+    transforms.Normalize((0.5,), (0.5,))  # Assuming grayscale normalization
 ])
 
-# Path to your folder containing images of letters A through E
-root_dir = "/content/drive/My Drive/Letters"
+images = [transform(Image.open(path).convert('L')) for path in image_paths]  # convert to grayscale
+images = torch.stack(images)  # Create a single batch to pass through the network
 
-# Create an instance of your custom dataset
-custom_dataset = CustomDataset(root_dir, transform=transform)
+# Assuming the model and the required device are set up
+pretrained_model.eval()  # Set the model to evaluation mode
+with torch.no_grad():  # Inference without gradient computation
+    predictions = pretrained_model(images)
 
-# Define a DataLoader for your custom dataset
-custom_loader = DataLoader(custom_dataset, batch_size=1, shuffle=False)
-
-# Load the pretrained model
-pretrained_model_path = "pretrained_model.pth"
-pretrained_model = CNN()
-pretrained_model.load_state_dict(torch.load(pretrained_model_path))
-
-# Define the criterion and optimizer
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(pretrained_model.parameters(), lr=0.01)
-
-# Define the true labels for the custom dataset
-true_labels = [0, 1, 2, 3, 4]  # Corresponding to letters A through E
-
-# Evaluate the model on your custom dataset
-correct = 0
-total = 0
-pretrained_model.eval()
-with torch.no_grad():
-    for images, labels in zip(custom_loader, true_labels):
-        outputs = pretrained_model(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += 1
-        correct += (predicted == labels).sum().item()
-
-# Calculate accuracy
-accuracy = (correct / total) * 100
-print(f"Accuracy on custom dataset for letters A through E: {accuracy:.2f}%")
-
-
+# Decode predictions
+predicted_labels = torch.argmax(predictions, dim=1)
+print(predicted_labels)
