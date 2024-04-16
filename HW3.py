@@ -267,32 +267,27 @@ image_paths = [
 new_size = (500, 500)
 rotation_angle = -90
 
-# Process each image: load, resize, rotate, and display
+images = []
 for path in image_paths:
-    # Load image
-    img = Image.open(path)
-    # Resize image
+    img = Image.open(path).convert('L')  # Convert to grayscale
     resized_img = img.resize(new_size)
-    # Rotate image 90 degrees to the right
     rotated_img = resized_img.rotate(rotation_angle)
-    # Display the image
-    rotated_img.show()
-    
-# Define transformation: resize, to tensor, normalization (adjust as needed)
-transform = transforms.Compose([
-    transforms.Resize((28, 28)),  # Assuming the input size that your model expects
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))  # Assuming grayscale normalization
-])
+    # Apply transformations and add to list
+    transformed_img = transform(rotated_img)
+    images.append(transformed_img)
 
-images = [transform(Image.open(path).convert('L')) for path in image_paths]  # convert to grayscale
-images = torch.stack(images)  # Create a single batch to pass through the network
+# Stack images into a single batch
+images = torch.stack(images)
 
-# Assuming the model and the required device are set up
-pretrained_model.eval()  # Set the model to evaluation mode
-with torch.no_grad():  # Inference without gradient computation
+label_map = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
+
+# Make predictions
+pretrained_model.eval()
+with torch.no_grad():
     predictions = pretrained_model(images)
 
 # Decode predictions
 predicted_labels = torch.argmax(predictions, dim=1)
-print(predicted_labels)
+predicted_letters = [label_map[label.item()] for label in predicted_labels]
+
+print(predicted_letters) 
