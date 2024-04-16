@@ -247,14 +247,13 @@ print(f"Accuracy on test set (using 1/10 of the available data) for 5-9: {accura
 #### Question 3 - Generate a data set of A - E and transfer the learning to predict those images
 from PIL import Image
 
-# Paths to the images
-#### Please dowload the A - E images attached to the submission, save them locally, and then copy and paste the local path to the image here
-
 # Save the trained model for transfer learning
 pretrained_model_path = "pretrained_model.pth"
 pretrained_model = CNN()
 pretrained_model.load_state_dict(torch.load(pretrained_model_path))
 
+# Paths to the images
+#### Please dowload the A - E images attached to the submission, save them locally, and then copy and paste the local path to the image here
 image_paths = [
     r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\A.jpeg',
     r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\B.jpeg',
