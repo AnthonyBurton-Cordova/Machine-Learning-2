@@ -108,7 +108,7 @@ with torch.no_grad():
 # Save the trained model for transfer learning
 torch.save(model.state_dict(), 'pretrained_model.pth')
 
-print(f"Accuracy on test set: {(100 * correct / total):.2f}%")
+print(f"Accuracy on test set 0-4: {(100 * correct / total):.2f}%")
 
 # Load the MNIST dataset
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -239,7 +239,7 @@ with torch.no_grad():
         correct += (predicted == labels).sum().item()
 
 accuracy = 100 * correct / total
-print(f"Accuracy on test set (using 1/10 of the available data): {accuracy:.2f}%")
+print(f"Accuracy on test set (using 1/10 of the available data) for 5-9: {accuracy:.2f}%")
 
 
 
@@ -247,7 +247,8 @@ print(f"Accuracy on test set (using 1/10 of the available data): {accuracy:.2f}%
 #### Question 3 - Generate a data set of A - E and transfer the learning to predict those images
 from PIL import Image
 
-# Load an image
+# Load an image.
+### Please dowload the images attached (A-E) to the submission and then copy and paste the local image here
 A = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\A.jpeg')
 B = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\B.jpeg')
 C = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\C.jpeg')
@@ -255,10 +256,30 @@ D = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Mach
 E = Image.open(r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\E.jpeg')
 
 # Resize all the images
-resized_image = image.resize((500, 500))
+resized_image = A.resize((500, 500))
 
 # Display the image
 resized_image.show()
+
+# Define the new size
+new_size = (500, 500)
+
+# Paths to the images
+image_paths = [
+    r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\A.jpeg',
+    r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\B.jpeg',
+    r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\C.jpeg',
+    r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\D.jpeg',
+    r'C:\Users\antho\OneDrive\SMU\Semester 5 Spring 2023\DS 7335 Machine Learning II\HW 3\E.jpeg'
+]
+    
+# Load each image, resize it, and display it
+for path in image_paths:
+    img = Image.open(path)
+    resized_img = img.resize(new_size)
+    
+    # Display the image
+    resized_img.show(title=os.path.basename(path))
 
 
 # Define your custom dataset class
@@ -319,6 +340,6 @@ with torch.no_grad():
 
 # Calculate accuracy
 accuracy = (correct / total) * 100
-print(f"Accuracy on custom dataset: {accuracy:.2f}%")
+print(f"Accuracy on custom dataset for letters A through E: {accuracy:.2f}%")
 
 
